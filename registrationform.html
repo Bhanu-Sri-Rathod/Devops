@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Event Registration</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 500px;
+      margin: 40px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #f9f9f9;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 10px;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      margin-bottom: 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+    button {
+      background-color: #28a745;
+      border: none;
+      color: white;
+      padding: 10px 16px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:disabled {
+      background-color: #94d3a2;
+      cursor: not-allowed;
+    }
+    #message {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    #message.success {
+      color: green;
+    }
+    #message.error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <h2>Event Registration</h2>
+  <form id="regForm" novalidate>
+    <label for="name">Name:</label>
+    <input type="text" id="name" required />
+
+    <label for="email">Email:</label>
+    <input type="email" id="email" required />
+
+    <label for="phone">Phone:</label>
+    <input type="tel" id="phone" pattern="[0-9]{10}" required />
+
+    <label for="event">Event Name:</label>
+    <input type="text" id="event" required />
+
+    <label for="type">Event Type:</label>
+    <select id="type" required>
+      <option value="">--Select Type--</option>
+      <option value="Workshop">Workshop</option>
+      <option value="Seminar">Seminar</option>
+      <option value="Webinar">Webinar</option>
+    </select>
+
+    <br><br>
+    <button type="submit" id="submitBtn">Register</button>
+  </form>
+
+  <p id="message"></p>
+
+  <script>
+    const form = document.getElementById('regForm');
+    const messageEl = document.getElementById('message');
+    const submitBtn = document.getElementById('submitBtn');
+
+    function validateEmail(email) {
+      // ✅ Correct regex (fixed!)
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    function validatePhone(phone) {
+      return /^[0-9]{10}$/.test(phone);
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      messageEl.textContent = '';
+      messageEl.className = '';
+
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const event = document.getElementById('event').value.trim();
+      const type = document.getElementById('type').value;
+
+      if (!name || !email || !phone || !event || !type) {
+        messageEl.textContent = 'Please fill all fields.';
+        messageEl.className = 'error';
+        return;
+      }
+
+      if (!validateEmail(email)) {
+        messageEl.textContent = 'Invalid email format.';
+        messageEl.className = 'error';
+        return;
+      }
+
+      if (!validatePhone(phone)) {
+        messageEl.textContent = 'Phone must be 10 digits.';
+        messageEl.className = 'error';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+
+      try {
+        const res = await fetch('http://localhost:4000/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, phone, event, type })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          messageEl.textContent = data.message || 'Registered successfully!';
+          messageEl.className = 'success';
+          form.reset();
+        } else {
+          messageEl.textContent = data.message || 'Registration failed.';
+          messageEl.className = 'error';
+        }
+      } catch (err) {
+        messageEl.textContent = 'Failed to connect to server.';
+        messageEl.className = 'error';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Register';
+      }
+    });
+  </script>
+</body>
+</html>
